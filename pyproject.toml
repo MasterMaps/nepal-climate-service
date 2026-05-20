@@ -5,6 +5,7 @@ requires-python = ">=3.13"
 description = "Open Climate Service instance for Nepal"
 dependencies = [
     "climate-api @ git+https://github.com/dhis2/climate-api.git",
+    "ecmwf-datastores",
 ]
 
 [tool.uv]
