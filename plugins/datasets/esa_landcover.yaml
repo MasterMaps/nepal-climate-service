@@ -1,0 +1,23 @@
+- id: esa_landcover_yearly
+  name: Land Cover (ESA CCI)
+  short_name: Land Cover
+  variable: lccs_class
+  period_type: yearly
+  sync:
+    kind: release
+  extents:
+    spatial:
+      bbox: [-180, -90, 180, 90]
+    temporal:
+      begin: "1992"
+      resolution: P1Y
+  ingestion:
+    plugin: datasets.esa_landcover.EsaLandCoverPlugin
+    params: {}
+  units: null
+  resolution: 300m x 300m
+  source: ESA CCI Land Cover v2
+  source_url: https://cds.copernicus.eu/datasets/satellite-land-cover
+  display:
+    colormap: spectral
+    range: [10, 220]
