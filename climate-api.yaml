@@ -1,3 +1,5 @@
+name: Nepal Climate Service
+
 extent:
   name: Nepal
   bbox: [80.05, 26.35, 88.20, 30.45]
