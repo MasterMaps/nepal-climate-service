@@ -2,7 +2,7 @@
   name: Gross Primary Production (CLMS)
   short_name: GPP
   variable: gpp
-  period_type: dekadal
+  period_type: daily
   sync:
     kind: temporal
   extents:

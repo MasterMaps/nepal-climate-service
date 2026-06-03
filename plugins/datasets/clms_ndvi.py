@@ -23,7 +23,7 @@ from typing import Any
 import numpy as np
 import xarray as xr
 
-from climate_api.ingest.protocol import GridSpec
+from open_climate_service.streaming.protocol import GridSpec
 from .clms_gpp import _dekadal_dates
 
 logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ class ClmsNdviPlugin:
     rechunk_time = 30
     pyramid: bool = True
 
-    def probe(self, bbox: list[float], **_: Any) -> GridSpec:
+    async def probe(self, bbox: list[float], **_: Any) -> GridSpec:
         xmin, ymin, xmax, ymax = map(float, bbox)
         nx = max(1, round((xmax - xmin) / _RES_DEG))
         ny = max(1, round((ymax - ymin) / _RES_DEG))
@@ -59,10 +59,10 @@ class ClmsNdviPlugin:
             crs=4326,
             dtype=np.dtype("float32"),
             nodata=float("nan"),
-            time_dim=True,
+            time_dim="time",
         )
 
-    def periods(self, start: str, end: str) -> list[str]:
+    async def periods(self, start: str, end: str) -> list[str]:
         import pystac_client
         clamped_start = max(start[:10], f"{_FIRST_YEAR}-01-01")
         catalog = pystac_client.Client.open(_STAC_URL)
@@ -74,7 +74,7 @@ class ClmsNdviPlugin:
         clamped_end = min(end[:10], latest)
         return _dekadal_dates(clamped_start, clamped_end)
 
-    def fetch_period(self, period_id: str, bbox: list[float], **_: Any) -> xr.Dataset:
+    async def fetch_period(self, period_id: str, bbox: list[float], **_: Any) -> xr.Dataset:
         import os
         import boto3
         import pystac_client

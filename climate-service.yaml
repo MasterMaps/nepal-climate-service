@@ -1,3 +1,4 @@
+id: nepal-climate-service
 name: Nepal Climate Service
 
 extent:
@@ -6,5 +7,6 @@ extent:
   country_code: NPL
 
 data_dir: ./data
-crs: EPSG:32645
 plugins_dir: ./plugins/
+
+crs: EPSG:32645

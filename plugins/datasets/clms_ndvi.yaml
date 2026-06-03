@@ -2,7 +2,7 @@
   name: Vegetation Index NDVI (CLMS)
   short_name: NDVI
   variable: ndvi
-  period_type: dekadal
+  period_type: daily
   sync:
     kind: temporal
   extents:

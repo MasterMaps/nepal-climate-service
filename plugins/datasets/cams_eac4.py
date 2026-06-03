@@ -31,7 +31,7 @@ from typing import Any
 import numpy as np
 import xarray as xr
 
-from climate_api.ingest.protocol import GridSpec, enumerate_periods
+from open_climate_service.streaming.protocol import GridSpec
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +85,7 @@ class CamsEac4Plugin:
         self._cached_month: tuple[int, int] | None = None
         self._cached_ds: xr.Dataset | None = None
 
-    def probe(self, bbox: list[float], **_: Any) -> GridSpec:
+    async def probe(self, bbox: list[float], **_: Any) -> GridSpec:
         xmin, ymin, xmax, ymax = map(float, bbox)
         pad = _RES_DEG
         nx = max(1, round((xmax - xmin + 2 * pad) / _RES_DEG))
@@ -95,17 +95,30 @@ class CamsEac4Plugin:
             crs=4326,
             dtype=np.dtype("float32"),
             nodata=float("nan"),
-            time_dim=True,
+            time_dim="time",
         )
 
-    def periods(self, start: str, end: str) -> list[str]:
+    async def periods(self, start: str, end: str) -> list[str]:
         if start[:10] < _FIRST_DATE:
             start = _FIRST_DATE
         cutoff = date.today() - timedelta(days=30 * _LAG_MONTHS)
-        all_hourly = enumerate_periods(start, end, "hourly", cutoff=cutoff)
-        return [p for p in all_hourly if int(p[11:13]) % 3 == 0]
+        start_str = start if "T" in start else start + "T00"
+        end_str = end if "T" in end else end + "T23"
+        start_dt = datetime.strptime(start_str[:13], "%Y-%m-%dT%H")
+        end_dt = datetime.strptime(end_str[:13], "%Y-%m-%dT%H")
+        cutoff_dt = datetime(cutoff.year, cutoff.month, cutoff.day, 21)
+        effective_end = min(end_dt, cutoff_dt)
+        # Step in 3-hour increments; align start to first valid 3h slot
+        if start_dt.hour % 3 != 0:
+            start_dt = start_dt.replace(hour=(start_dt.hour // 3 + 1) * 3)
+        periods = []
+        current = start_dt
+        while current <= effective_end:
+            periods.append(current.strftime("%Y-%m-%dT%H"))
+            current += timedelta(hours=3)
+        return periods
 
-    def fetch_period(self, period_id: str, bbox: list[float], **_: Any) -> xr.Dataset:
+    async def fetch_period(self, period_id: str, bbox: list[float], **_: Any) -> xr.Dataset:
         dt = datetime.fromisoformat(period_id)
         year, month = dt.year, dt.month
 
@@ -132,6 +145,7 @@ class CamsEac4Plugin:
         if rename:
             da = da.rename(rename)
 
+        da = da * 1e9  # kg/m³ → μg/m³
         ds = da.to_dataset(name=self.variable)
         ds = ds.expand_dims(time=[np.datetime64(period_id)])
         return ds.load()

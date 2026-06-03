@@ -25,7 +25,7 @@ from typing import Any
 import numpy as np
 import xarray as xr
 
-from climate_api.ingest.protocol import GridSpec, enumerate_periods
+from open_climate_service.streaming.protocol import GridSpec
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ class ModisLandCoverPlugin:
     rechunk_time = 5
     pyramid: bool = True
 
-    def probe(self, bbox: list[float], **_: Any) -> GridSpec:
+    async def probe(self, bbox: list[float], **_: Any) -> GridSpec:
         xmin, ymin, xmax, ymax = map(float, bbox)
         nx = max(1, round((xmax - xmin) / _RES_DEG))
         ny = max(1, round((ymax - ymin) / _RES_DEG))
@@ -82,15 +82,15 @@ class ModisLandCoverPlugin:
             crs=4326,
             dtype=np.dtype("uint8"),
             nodata=255,
-            time_dim=True,
+            time_dim="time",
         )
 
-    def periods(self, start: str, end: str) -> list[str]:
+    async def periods(self, start: str, end: str) -> list[str]:
         sy = max(int(start[:4]), _FIRST_YEAR)
         ey = int(end[:4])
-        return enumerate_periods(str(sy), str(ey), "yearly")
+        return [str(y) for y in range(sy, ey + 1)]
 
-    def fetch_period(self, period_id: str, bbox: list[float], **_: Any) -> xr.Dataset:
+    async def fetch_period(self, period_id: str, bbox: list[float], **_: Any) -> xr.Dataset:
         import tempfile
         import pystac_client
         import rasterio

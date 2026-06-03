@@ -17,8 +17,6 @@
     params:
       api_variable: particulate_matter_2.5um
       variable: pm2p5
-  transforms:
-    - climate_api.transforms.kg_per_m3_to_ug_per_m3
   units: "μg m⁻³"
   resolution: 0.75° × 0.75°
   source: CAMS Global Reanalysis (EAC4)
