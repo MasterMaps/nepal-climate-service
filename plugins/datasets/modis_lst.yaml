@@ -1,0 +1,25 @@
+- id: modis_lst_day_monthly
+  name: Land Surface Temperature (MODIS MOD11A1, day)
+  short_name: LST (day)
+  variable: lst_day
+  period_type: monthly
+  sync:
+    kind: temporal
+  extents:
+    spatial:
+      bbox: [80.05, 26.35, 88.20, 30.45]
+    temporal:
+      begin: "2016-01"
+      end: "2016-12"
+      resolution: P1M
+  ingestion:
+    plugin: datasets.modis_lst.ModisLstMonthlyPlugin
+    params:
+      variable: lst_day
+  units: degC
+  resolution: 1km x 1km
+  source: MODIS MOD11A1 (monthly median, gap-filled, processed by B. Acharya)
+  source_url: https://lpdaac.usgs.gov/products/mod11a1v061/
+  display:
+    colormap: rdbu_r
+    range: [-5.0, 35.0]
