@@ -1324,6 +1324,21 @@ wheels = [
 ]
 
 [[package]]
+name = "mapflow"
+version = "0.2.14"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "geopandas" },
+    { name = "matplotlib" },
+    { name = "tqdm" },
+    { name = "xarray" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1f/58/a0cf29ff1c1402072b502c7bc6737be6e16304794971626e7c34288b08ac/mapflow-0.2.14.tar.gz", hash = "sha256:446eece007f6479392ec67278a8b6e2456fa3b68bf2be9252ecd14ba50a24d42", size = 4927103, upload-time = "2026-01-04T11:48:53.78Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/95/ee/263bfaec6d679c036c6c30086c3730633196cf787c133085ed35e6775de0/mapflow-0.2.14-py3-none-any.whl", hash = "sha256:b24c4bad985b4774b9d8b2dbdceb3d22d379ffa2ff0fe50f9b4009785a218bbd", size = 2060232, upload-time = "2026-01-04T11:48:52.325Z" },
+]
+
+[[package]]
 name = "markdown"
 version = "3.10.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1566,12 +1581,20 @@ dependencies = [
     { name = "open-climate-service", extra = ["server"] },
 ]
 
+[package.dev-dependencies]
+scripts = [
+    { name = "mapflow" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "boto3" },
     { name = "ecmwf-datastores-client" },
     { name = "open-climate-service", extras = ["server"], git = "https://github.com/dhis2/open-climate-service.git?branch=main" },
 ]
+
+[package.metadata.requires-dev]
+scripts = [{ name = "mapflow" }]
 
 [[package]]
 name = "netcdf4"

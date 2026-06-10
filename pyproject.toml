@@ -9,6 +9,9 @@ dependencies = [
     "boto3",
 ]
 
+[dependency-groups]
+scripts = ["mapflow"]
+
 [tool.uv]
 package = false
 override-dependencies = [
