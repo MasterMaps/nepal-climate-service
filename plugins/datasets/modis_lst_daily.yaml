@@ -29,6 +29,13 @@
   period_type: monthly
   sync:
     kind: static
+  extents:
+    spatial:
+      bbox: [80.05, 26.35, 88.20, 30.45]
+    temporal:
+      begin: "2016-01"
+      end: "2016-12"
+      resolution: P1M
   units: degC
   resolution: 1km x 1km
   source: MODIS MOD11A1 (Terra) via the OCS modis_lst_monthly workflow
