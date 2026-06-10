@@ -25,4 +25,4 @@
   source_url: https://cds.climate.copernicus.eu/datasets/reanalysis-era5-land-monthly-means
   display:
     colormap: rdbu_r
-    range: [-5.0, 35.0]
+    range: [-30.0, 30.0]

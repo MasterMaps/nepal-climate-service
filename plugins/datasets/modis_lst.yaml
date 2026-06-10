@@ -22,4 +22,4 @@
   source_url: https://lpdaac.usgs.gov/products/mod11a1v061/
   display:
     colormap: rdbu_r
-    range: [-5.0, 35.0]
+    range: [-30.0, 30.0]
