@@ -1,0 +1,24 @@
+- id: era5land_tmax_monthly
+  name: Monthly mean of daily max 2m temperature (ERA5-Land)
+  short_name: Tmax (monthly mean)
+  variable: t2m_max
+  period_type: monthly
+  sync:
+    kind: temporal
+  extents:
+    spatial:
+      bbox: [80.05, 26.35, 88.20, 30.45]
+    temporal:
+      begin: "1950-01"
+      resolution: P1M
+  ingestion:
+    plugin: datasets.era5_tmax_monthly.ERA5LandTmaxMonthlyPlugin
+    params:
+      variable: t2m_max
+  units: degC
+  resolution: 9 km x 9 km
+  source: ERA5-Land daily statistics (daily maximum), averaged per month
+  source_url: https://cds.climate.copernicus.eu/datasets/derived-era5-land-daily-statistics
+  display:
+    colormap: rdbu_r
+    range: [-30.0, 30.0]
