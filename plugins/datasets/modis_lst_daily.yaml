@@ -1,0 +1,38 @@
+- id: modis_lst_daily
+  name: MODIS Terra LST + QC (daily, raw)
+  short_name: MODIS LST daily (raw)
+  variable: lst_day
+  period_type: daily
+  sync:
+    kind: temporal
+  extents:
+    spatial:
+      bbox: [80.05, 26.35, 88.20, 30.45]
+    temporal:
+      begin: "2000-02-24"
+      resolution: P1D
+  ingestion:
+    plugin: datasets.modis_lst_daily.ModisLstDailyPlugin
+    params: {}
+  units: "K x 0.02 (raw DN)"
+  resolution: 1km x 1km
+  source: MODIS/061 MOD11A1 (Terra) via Microsoft Planetary Computer
+  source_url: https://planetarycomputer.microsoft.com/dataset/modis-11A1-061
+  display:
+    colormap: rdbu_r
+    range: [13000.0, 15500.0]
+
+- id: modis_lst_day_monthly_oeo
+  name: LST (day) monthly — computed in OCS (openEO)
+  short_name: LST (day) OCS
+  variable: lst_day
+  period_type: monthly
+  sync:
+    kind: static
+  units: degC
+  resolution: 1km x 1km
+  source: MODIS MOD11A1 (Terra) via the OCS modis_lst_monthly workflow
+  source_url: https://planetarycomputer.microsoft.com/dataset/modis-11A1-061
+  display:
+    colormap: rdbu_r
+    range: [-5.0, 35.0]
