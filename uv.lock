@@ -1776,7 +1776,7 @@ wheels = [
 [[package]]
 name = "open-climate-service"
 version = "0.1.0"
-source = { git = "https://github.com/dhis2/open-climate-service.git?branch=main#e090ec813a0bc1da931b8182f0be9749662781f1" }
+source = { git = "https://github.com/dhis2/open-climate-service.git?branch=main#9eb5232783d004b00f919feca1caa3e1b081d2ae" }
 dependencies = [
     { name = "httpx" },
     { name = "pystac" },
