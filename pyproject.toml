@@ -4,7 +4,7 @@ version = "0.1.0"
 requires-python = ">=3.13"
 description = "Open Climate Service instance for Nepal"
 dependencies = [
-    "open-climate-service[server] @ git+https://github.com/dhis2/open-climate-service.git",
+    "open-climate-service[server]==0.1.0",
     "ecmwf-datastores-client",
     "boto3",
 ]
@@ -26,8 +26,4 @@ override-dependencies = [
     "xvec>=0.3",
     "rioxarray>=0.17",
     "pystac>=1.10",
-    "gdal==3.12.2",
 ]
-
-[tool.uv.sources]
-open-climate-service = { git = "https://github.com/dhis2/open-climate-service.git", branch = "main" }
