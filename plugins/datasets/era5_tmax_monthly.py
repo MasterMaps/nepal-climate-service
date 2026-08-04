@@ -18,11 +18,10 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import xarray as xr
+from ecmwf.datastores import Client as CdsClient
 
-from open_climate_service.plugins.datasets.era5_land import _CdsClient, _era5land_probe
-from open_climate_service.streaming.protocol import GridSpec
+from open_climate_service.streaming import BaseDatasetPlugin, normalize_period
 
 
 def _month_starts(start: str, end: str) -> list[str]:
@@ -39,7 +38,7 @@ def _month_starts(start: str, end: str) -> list[str]:
     return out
 
 
-class ERA5LandTmaxMonthlyPlugin:
+class ERA5LandTmaxMonthlyPlugin(BaseDatasetPlugin):
     """Monthly mean of daily maximum 2m temperature, derived from CDS daily stats."""
 
     max_concurrency = 1
@@ -47,9 +46,6 @@ class ERA5LandTmaxMonthlyPlugin:
 
     def __init__(self, variable: str = "t2m_max", **_: Any) -> None:
         self.variable = variable
-
-    async def probe(self, bbox: list[float], **_: Any) -> GridSpec:
-        return _era5land_probe(bbox)
 
     async def periods(self, start: str, end: str) -> list[str]:
         return _month_starts(start, end)
@@ -76,17 +72,14 @@ class ERA5LandTmaxMonthlyPlugin:
         }
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp) / "era5land_tmax.nc"
-            _CdsClient().submit("derived-era5-land-daily-statistics", params).download(str(target))
+            CdsClient().submit("derived-era5-land-daily-statistics", params).download(str(target))
             ds = xr.open_dataset(target, engine="netcdf4").load()
 
         ds = ds[["t2m"]]
-        t_dim = "valid_time" if "valid_time" in ds.dims else ("time" if "time" in ds.dims else None)
-        rename = {"longitude": "x", "latitude": "y"}
-        if t_dim:
-            rename[t_dim] = "t"
-        ds = ds.rename(rename)
-        # Mean over the month's daily maxima; Kelvin -> Celsius.
-        monthly = (ds["t2m"].mean(dim="t") - 273.15).astype("float32")
-        out = monthly.to_dataset(name=self.variable)
-        out = out.expand_dims(t=[np.datetime64(f"{year}-{month:02d}-01")])
-        return out.load()
+        t_dim = "valid_time" if "valid_time" in ds.dims else "time"
+        # Mean over the month's daily maxima; Kelvin -> Celsius. Reducing the daily axis
+        # away leaves a 2-D grid, so normalize_period stamps the month onto `t`.
+        monthly = (ds["t2m"].mean(dim=t_dim) - 273.15).astype("float32")
+        # No bbox clip: the CDS request already restricts to the bbox via `area`, and the
+        # returned netCDF carries no CRS for rioxarray to clip against.
+        return normalize_period(monthly, variable=self.variable, period=f"{year}-{month:02d}-01")
