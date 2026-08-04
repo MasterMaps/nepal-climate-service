@@ -7,7 +7,24 @@ dependencies = [
     "open-climate-service[server] @ git+https://github.com/dhis2/open-climate-service.git",
     "ecmwf-datastores-client",
     "boto3",
+    # Used by plugins/datasets/esa_landcover.py. Previously satisfied transitively by
+    # the pinned 0.1.0 [server] extra; main no longer pulls it, so declare it here —
+    # the instance that ships the plugin owns the plugin's dependencies.
+    "cdsapi",
 ]
+
+[dependency-groups]
+scripts = ["mapflow"]
+dev = ["pytest>=8", "pyyaml"]
+
+[tool.pytest.ini_options]
+# `package = false`, so make the plugin modules importable the same way the
+# running service does (plugins_dir is added to sys.path at startup).
+pythonpath = ["plugins"]
+testpaths = ["tests"]
+
+[tool.uv.sources]
+open-climate-service = { git = "https://github.com/dhis2/open-climate-service.git", branch = "main" }
 
 [tool.uv]
 package = false
@@ -23,8 +40,4 @@ override-dependencies = [
     "xvec>=0.3",
     "rioxarray>=0.17",
     "pystac>=1.10",
-    "gdal==3.12.2",
 ]
-
-[tool.uv.sources]
-open-climate-service = { git = "https://github.com/dhis2/open-climate-service.git", branch = "main" }

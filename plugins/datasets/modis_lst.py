@@ -20,7 +20,7 @@ import numpy as np
 import rioxarray  # noqa: F401  # registers the .rio accessor / GeoTIFF reader
 import xarray as xr
 
-from open_climate_service.streaming.protocol import GridSpec
+from open_climate_service.streaming import BaseDatasetPlugin
 
 _DATA_DIR = Path(__file__).parent / "modis_lst_2016"
 _YEAR = 2016
@@ -30,7 +30,7 @@ def _path_for(year: int, month: int) -> Path:
     return _DATA_DIR / f"LST_Day_{year}_{month:02d}.tif"
 
 
-class ModisLstMonthlyPlugin:
+class ModisLstMonthlyPlugin(BaseDatasetPlugin):
     """Streaming plugin for the monthly MODIS LST (day) GeoTIFFs."""
 
     max_concurrency = 1
@@ -38,19 +38,6 @@ class ModisLstMonthlyPlugin:
 
     def __init__(self, variable: str = "lst_day", **_: object) -> None:
         self.variable = variable
-
-    async def probe(self, bbox: list[float], **_: Any) -> GridSpec:
-        dataset = self._read_month(_YEAR, 1)
-        try:
-            return GridSpec(
-                shape=(int(dataset.sizes["y"]), int(dataset.sizes["x"])),
-                crs=4326,
-                dtype=np.dtype("float32"),
-                nodata=float("nan"),
-                time_dim="t",
-            )
-        finally:
-            dataset.close()
 
     async def periods(self, start: str, end: str) -> list[str]:
         start_ym = str(start)[:7]

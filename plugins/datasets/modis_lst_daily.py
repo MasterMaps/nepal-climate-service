@@ -21,7 +21,7 @@ from typing import Any
 import numpy as np
 import xarray as xr
 
-from open_climate_service.streaming.protocol import GridSpec
+from open_climate_service.streaming import BaseDatasetPlugin
 
 _STAC_URL = "https://planetarycomputer.microsoft.com/api/stac/v1"
 _COLLECTION = "modis-11A1-061"
@@ -52,7 +52,7 @@ def _load_day(day: str, bbox: list[float]) -> xr.Dataset | None:
     return ds.isel(time=0, drop=True) if "time" in ds.dims else ds
 
 
-class ModisLstDailyPlugin:
+class ModisLstDailyPlugin(BaseDatasetPlugin):
     """Streaming plugin for daily MODIS Terra LST + QC over the instance extent."""
 
     max_concurrency = 1
@@ -60,13 +60,6 @@ class ModisLstDailyPlugin:
 
     def __init__(self, **_: object) -> None:
         self._grid: tuple[int, int] | None = None
-
-    async def probe(self, bbox: list[float], **_: Any) -> GridSpec:
-        # Sample a recent clear-ish day to pin the output grid shape.
-        sample = await asyncio.to_thread(self._first_available, ["2016-04-15", "2016-04-16", "2016-04-17"], bbox)
-        self._grid = (int(sample.sizes["latitude"]), int(sample.sizes["longitude"]))
-        sample.close()
-        return GridSpec(shape=self._grid, crs=4326, dtype=np.dtype("float32"), nodata=float("nan"), time_dim="t")
 
     async def periods(self, start: str, end: str) -> list[str]:
         d0 = date.fromisoformat(str(start)[:10])
@@ -79,10 +72,35 @@ class ModisLstDailyPlugin:
         day = str(period_id)[:10]
         ds = await asyncio.to_thread(_load_day, day, bbox)
         if ds is None:
+            # MODIS has no Terra granule for this day — emit an all-NaN grid so the
+            # gap is a real time step rather than a hole in the time axis. It must
+            # match the store's grid exactly, so pin the shape first (see _pin_grid).
+            await asyncio.to_thread(self._pin_grid, bbox)
             ds = self._empty_like(bbox)
-        ds = self._normalize(ds)
+        else:
+            ds = self._normalize(ds)
+            # Remember the grid so a later gap day can be shaped to match.
+            self._grid = (int(ds.sizes["y"]), int(ds.sizes["x"]))
         ds = ds.expand_dims(t=[np.datetime64(day)])
         return ds.load()
+
+    def _pin_grid(self, bbox: list[float]) -> None:
+        """Ensure ``self._grid`` is known before building an empty grid.
+
+        Normally set from the first successful fetch. It is only unset when the very
+        first period requested is itself a data gap, so sample a known-good day —
+        the shape cannot be derived arithmetically from bbox/resolution, since
+        ``odc.stac.load`` rounds differently (Nepal: 457 rows, not the 456 that
+        ``(ymax - ymin) / _RES_DEG`` gives).
+        """
+        if self._grid is not None:
+            return
+        sample = self._first_available(["2016-04-15", "2016-04-16", "2016-04-17"], bbox)
+        try:
+            normalized = self._normalize(sample)
+            self._grid = (int(normalized.sizes["y"]), int(normalized.sizes["x"]))
+        finally:
+            sample.close()
 
     def _first_available(self, days: list[str], bbox: list[float]) -> xr.Dataset:
         for day in days:
@@ -104,7 +122,14 @@ class ModisLstDailyPlugin:
         return ds
 
     def _empty_like(self, bbox: list[float]) -> xr.Dataset:
-        ny, nx = self._grid or (1, 1)
+        if self._grid is None:
+            # Never silently fall back to a placeholder shape: a mis-shaped grid is
+            # rejected by the orchestrator's per-period shape check, and the old
+            # (1, 1) default turned a data gap into an opaque ingest abort.
+            raise RuntimeError(
+                "MODIS LST grid shape is unknown — call _pin_grid() before building an empty grid"
+            )
+        ny, nx = self._grid
         empty = np.full((ny, nx), np.nan, dtype="float32")
         xmin, ymin, xmax, ymax = map(float, bbox)
         return xr.Dataset(
