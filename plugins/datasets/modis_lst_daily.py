@@ -113,9 +113,6 @@ class ModisLstDailyPlugin(BaseDatasetPlugin):
         rename = {k: v for k, v in (("longitude", "x"), ("latitude", "y")) if k in ds.dims}
         rename.update({b: o for b, o in (("LST_Day_1km", "lst_day"), ("QC_Day", "qc_day")) if b in ds})
         ds = ds.rename(rename)
-        # Ensure y ascending for the map viewer.
-        if "y" in ds and float(ds["y"].values[0]) > float(ds["y"].values[-1]):
-            ds = ds.isel(y=slice(None, None, -1))
         for v in ("lst_day", "qc_day"):
             if v in ds:
                 ds[v] = ds[v].astype("float32")

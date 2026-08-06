@@ -82,11 +82,6 @@ class CopernicusDemPlugin(BaseDatasetPlugin):
         merged = merge_arrays(arrays) if len(arrays) > 1 else arrays[0]
         merged = merged.astype(np.float32)
 
-        # zarr-layer requires y to be ascending (south-to-north); GeoTIFF tiles
-        # come north-to-south, so flip if needed.
-        if merged.y.values[0] > merged.y.values[-1]:
-            merged = merged.isel(y=slice(None, None, -1))
-
         ds = merged.to_dataset(name="elevation")
         # GLO-30 is static; carry a single nominal timestep (dataset begin year) so
         # the dataset has a `t` dimension. OCS's coverage path requires a time

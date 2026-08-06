@@ -56,9 +56,6 @@ class ModisLstMonthlyPlugin(BaseDatasetPlugin):
     def _read_month(self, year: int, month: int) -> xr.Dataset:
         path = _path_for(year, month)
         da = rioxarray.open_rasterio(path, masked=True).squeeze("band", drop=True).astype("float32")
-        # Ensure y ascending (south -> north) for the map viewer.
-        if float(da.y.values[0]) > float(da.y.values[-1]):
-            da = da.isel(y=slice(None, None, -1))
         ds = da.to_dataset(name=self.variable)
         ds = ds.expand_dims(t=[np.datetime64(f"{year}-{month:02d}-01")])
         return ds.load()
