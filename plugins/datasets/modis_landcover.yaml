@@ -14,6 +14,12 @@
   ingestion:
     plugin: datasets.modis_landcover.ModisLandCoverPlugin
     params: {}
+    # Categorical class codes: coarse pyramid levels must take the majority class of the
+    # native cells they cover, not their mean. Without this the default ('mean') averages
+    # class codes, so the map viewer shows values that are not classes at all above full
+    # zoom. OCS recomputes each level from the native array for 'mode' rather than
+    # cascading, so a locally dominant class cannot win at coarse zoom.
+    resampling: mode
   units: null
   resolution: 500m x 500m
   source: MODIS Terra+Aqua MCD12Q1 v061 — IGBP classification (LC_Type1)
