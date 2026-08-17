@@ -91,3 +91,53 @@ class TestDeclaredPlugin:
         """The orchestrator reads these off the plugin to find the fetched dims."""
         plugin = _load(plugin_path)
         assert (plugin.time_dim, plugin.y_dim, plugin.x_dim) == ("t", "y", "x")
+
+
+# --- categorical datasets must coarsen by majority, not by mean -------------------------------
+
+# Templates whose values are class codes rather than measurements. Averaging class codes is not
+# merely imprecise: on the ESA CCI scheme, a 2x2 block of 10 (cropland, rainfed) and 50 (tree
+# cover, broadleaved evergreen) averages to 20 — "cropland, irrigated", a real class that
+# describes neither input. The pyramid the map viewer reads above full zoom is built from that,
+# so the wrong answer looks like a legitimate one.
+_CATEGORICAL_TEMPLATE_IDS = {"esa_landcover_yearly", "modis_landcover_yearly"}
+
+
+def _templates() -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for yaml_path in sorted(_DATASETS_DIR.glob("*.yaml")):
+        loaded = yaml.safe_load(yaml_path.read_text(encoding="utf-8"))
+        out.extend(t for t in (loaded if isinstance(loaded, list) else [loaded]) if isinstance(t, dict))
+    return out
+
+
+def test_categorical_templates_declare_mode_resampling() -> None:
+    """A categorical dataset must declare `ingestion.resampling: mode`.
+
+    The default is `mean`, which is correct for measurements and wrong for class codes. This is
+    a template-level decision that nothing in core can infer, so it has to be asserted here.
+    """
+    by_id = {str(t.get("id")): t for t in _templates()}
+    missing = sorted(_CATEGORICAL_TEMPLATE_IDS - set(by_id))
+    assert not missing, f"categorical template ids no longer present: {missing} (rename in the test too)"
+
+    for dataset_id in sorted(_CATEGORICAL_TEMPLATE_IDS):
+        resampling = (by_id[dataset_id].get("ingestion") or {}).get("resampling")
+        assert resampling == "mode", (
+            f"{dataset_id} declares ingestion.resampling={resampling!r}; categorical class codes "
+            "must coarsen by majority or the pyramid averages them into a different class"
+        )
+
+
+def test_continuous_templates_do_not_declare_mode_resampling() -> None:
+    """The converse, so the rule above is not applied by reflex to measurements.
+
+    `clms_ndvi` is the case worth guarding: its `units` are null like the land-cover datasets,
+    because NDVI is dimensionless — not because it is categorical. Its mean is meaningful.
+    """
+    for template in _templates():
+        dataset_id = str(template.get("id"))
+        if dataset_id in _CATEGORICAL_TEMPLATE_IDS:
+            continue
+        resampling = (template.get("ingestion") or {}).get("resampling")
+        assert resampling != "mode", f"{dataset_id} is not categorical but declares resampling: mode"
