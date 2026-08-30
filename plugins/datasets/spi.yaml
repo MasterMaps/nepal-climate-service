@@ -1,0 +1,18 @@
+# Output template for the SPI-3 drought index computed via openEO save_result.
+# sync.kind: static — produced by an openEO job (load_collection -> spi -> save_result),
+# not by a streaming ingest plugin, so no ingestion block.
+- id: era5land_spi3_monthly
+  name: SPI-3 drought index (ERA5-Land)
+  short_name: SPI-3
+  variable: spi
+  period_type: monthly
+  sync:
+    kind: static
+  # Dimensionless standardized index. "" is the explicit dimensionless marker.
+  units: ""
+  resolution: 9 km x 9 km
+  source: ERA5-Land Reanalysis
+  source_url: https://cds.climate.copernicus.eu/datasets/reanalysis-era5-land-monthly-means
+  display:
+    colormap: rdbu
+    range: [-3.0, 3.0]
