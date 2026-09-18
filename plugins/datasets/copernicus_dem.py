@@ -1,6 +1,6 @@
 """Copernicus DEM GLO-30 elevation plugin.
 
-Static dataset — single ingest, no time dimension.
+Static dataset — single ingest, carrying one nominal timestep.
 Source: Copernicus DEM GLO-30 COG tiles from AWS Open Data (public, no auth).
 Variable: elevation (Digital Surface Model) at ~30m (1 arc-second) resolution.
 
@@ -44,8 +44,6 @@ class CopernicusDemPlugin(BaseDatasetPlugin):
 
     max_concurrency = 1
     commit_batch_size = 1
-    rechunk_time: int | None = None
-    pyramid: bool = True
 
     async def periods(self, start: str, end: str) -> list[str]:
         return ["static"]
@@ -82,9 +80,12 @@ class CopernicusDemPlugin(BaseDatasetPlugin):
         merged = merge_arrays(arrays) if len(arrays) > 1 else arrays[0]
         merged = merged.astype(np.float32)
 
+        # Orientation is left as the tiles deliver it: the write boundary normalises
+        # y to descending (row 0 = north) for every store — see OCS
+        # shared/raster_contract.py. Flipping here only fights that.
         ds = merged.to_dataset(name="elevation")
-        # GLO-30 is static; carry a single nominal timestep (dataset begin year) so
-        # the dataset has a `t` dimension. OCS's coverage path requires a time
-        # dimension, so a truly time-less store (time_dim=False) cannot be published.
+        # GLO-30 is static; carry a single nominal timestep (the template's begin
+        # year) so the dataset has a `t` dimension. A dataset's temporal coverage is
+        # read off that dimension, so a store without one cannot be published.
         ds = ds.expand_dims(t=[np.datetime64("2010-01-01")])
         return ds
